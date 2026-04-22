@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-brand-red: #B91C1C; /* red-700 */
+  --color-brand-red-light: #DC2626; /* red-600 */
+  --color-brand-slate-dark: #0F172A; /* slate-900 */
+  --color-brand-slate-border: #E2E8F0; /* slate-200 */
+  --color-brand-slate-bg: #F8FAFC; /* slate-50 */
+}
+
+@layer base {
+  body {
+    @apply bg-brand-slate-bg text-slate-900 transition-colors duration-300;
+  }
+  .dark body {
+    @apply bg-brand-slate-dark text-slate-100;
+  }
+}
+
+.nav-active-border {
+  @apply border-l-4 border-brand-red-light bg-red-600/10 text-red-600;
+}
+
+.glass-card {
+  @apply bg-white dark:bg-slate-900 border border-brand-slate-border dark:border-slate-800 shadow-sm rounded-xl;
+}
+
+.match-card-dark {
+  @apply bg-brand-slate-dark text-white rounded-2xl p-6 relative overflow-hidden;
+}
+

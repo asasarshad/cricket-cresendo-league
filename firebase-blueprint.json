@@ -1,0 +1,104 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a user in the system with roles and permissions.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "player", "guest"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Team": {
+      "title": "Team",
+      "description": "A team participating in the league.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "played": { "type": "number" },
+            "won": { "type": "number" },
+            "lost": { "type": "number" },
+            "points": { "type": "number" },
+            "nrr": { "type": "number" }
+          }
+        }
+      },
+      "required": ["id", "name"]
+    },
+    "Player": {
+      "title": "Player",
+      "description": "A registered player in the league.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "teamId": { "type": "string" },
+        "role": { "type": "string", "enum": ["batsman", "bowler", "all_rounder", "wicket_keeper"] },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "matches": { "type": "number" },
+            "runs": { "type": "number" },
+            "wickets": { "type": "number" },
+            "highestScore": { "type": "number" },
+            "strikeRate": { "type": "number" }
+          }
+        }
+      },
+      "required": ["id", "userId", "name", "email", "teamId"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "A cricket match within the league.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "teamA": { "type": "string" },
+        "teamB": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "venue": { "type": "string" },
+        "status": { "type": "string", "enum": ["scheduled", "live", "completed", "abandoned"] },
+        "scoreA": { "type": "string" },
+        "scoreB": { "type": "string" },
+        "result": { "type": "string" }
+      },
+      "required": ["id", "teamA", "teamB", "date", "status"]
+    },
+    "Registration": {
+      "title": "Registration",
+      "description": "A registration record for a team or player.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["individual", "team"] },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "paid", "failed"] },
+        "stripeSessionId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles and roles" },
+    "/teams/{teamId}": { "schema": "Team", "description": "League teams" },
+    "/players/{playerId}": { "schema": "Player", "description": "Registered players and their stats" },
+    "/matches/{matchId}": { "schema": "Match", "description": "Match schedules and live scores" },
+    "/registrations/{regId}": { "schema": "Registration", "description": "Payment and registration logs" }
+  }
+}

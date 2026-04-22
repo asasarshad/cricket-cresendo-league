@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    function isAdmin() { return isVerified() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // Users
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.keys().hasAll(['uid', 'email', 'role', 'createdAt', 'updatedAt']) &&
+               data.keys().size() == 5 &&
+               data.uid == request.auth.uid &&
+               data.email is string &&
+               data.role in ['admin', 'player', 'guest'] &&
+               data.createdAt == request.time &&
+               data.updatedAt == request.time;
+      }
+
+      allow get: if isVerified();
+      allow create: if isVerified() && isValidUser(incoming()) && incoming().role == 'guest'; // Default to guest
+      allow update: if isVerified() && (
+        isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt']) && incoming().updatedAt == request.time
+        || isAdmin() // Admins can change roles
+      );
+    }
+
+    // Teams
+    match /teams/{teamId} {
+      function isValidTeam(data) {
+        return data.keys().hasAll(['id', 'name', 'ownerId']) &&
+               data.name is string && data.name.size() <= 100;
+      }
+      allow read: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (isVerified() && isValidTeam(incoming()) && incoming().ownerId == existing().ownerId);
+      allow delete: if isAdmin();
+    }
+
+    // Players
+    match /players/{playerId} {
+      function isValidPlayer(data) {
+        return data.keys().hasAll(['id', 'userId', 'name', 'email', 'teamId']) &&
+               data.userId == request.auth.uid &&
+               data.name is string && data.name.size() <= 100;
+      }
+      allow read: if true;
+      allow create: if isVerified() && isValidPlayer(incoming());
+      allow update: if isAdmin() || (isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'role']));
+    }
+
+    // Matches
+    match /matches/{matchId} {
+      allow read: if true;
+      allow write: if isAdmin(); // Only admins can manage matches and live scores
+    }
+
+    // Registrations
+    match /registrations/{regId} {
+      allow read: if isAdmin() || isOwner(existing().userId);
+      allow create: if isVerified() && incoming().userId == request.auth.uid;
+      allow update: if isAdmin(); // Server/Admin updates status to 'paid' via metadata/webhook logic usually, but here we allow admin manually for demo or secure backend process
+    }
+  }
+}
